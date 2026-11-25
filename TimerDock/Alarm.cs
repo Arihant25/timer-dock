@@ -1,16 +1,18 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security;
-using Windows.Data.Xml.Dom;
+using System.Xml;
 using Windows.UI.Notifications;
+using XmlDocument = Windows.Data.Xml.Dom.XmlDocument;
 
 namespace TimerDock;
 
 /// <summary>
 /// Tells you a countdown finished: a Windows notification in the "reminder" style, which stays on
-/// screen until dismissed and plays the reminder sound. If notifications can't be shown, plays the
-/// Windows alarm sound instead. The Dock also switches to "Time's up" either way.
+/// screen until dismissed and plays the reminder sound. If notifications are off for the app or
+/// can't be shown, plays the Windows alarm sound instead. The Dock also shows "Time's up" either way.
 /// </summary>
 internal static partial class Alarm
 {
@@ -19,10 +21,27 @@ internal static partial class Alarm
     private const uint SndFilename = 0x00020000;
     private const uint SndNodefault = 0x0002;
 
-    public static void Ring(string label, TimeSpan duration)
+    /// <summary>What finished, captured when it finished.</summary>
+    internal sealed record Request(string Label, TimeSpan Duration);
+
+    // An explicit app ID: the extension runs as a COM server, where the implicit one isn't reliable.
+    private static readonly Lazy<string?> Aumid = new(() =>
     {
+        try
+        {
+            return Windows.ApplicationModel.Package.Current.Id.FamilyName + "!App";
+        }
+        catch
+        {
+            return null;
+        }
+    });
+
+    public static void Ring(Request request)
+    {
+        var label = Clean(request.Label);
         var title = string.IsNullOrEmpty(label) ? "Time's up" : $"Time's up: {label}";
-        var body = $"Your {TimerEngine.Describe(duration)} timer has finished.";
+        var body = $"Your {TimerEngine.Describe(request.Duration)} timer has finished.";
         if (!TryToast(title, body))
         {
             PlayFallbackSound();
@@ -33,7 +52,10 @@ internal static partial class Alarm
     {
         try
         {
-            ToastNotificationManager.History.Remove(Tag);
+            if (Aumid.Value is { } aumid)
+            {
+                ToastNotificationManager.History.Remove(Tag, Tag, aumid);
+            }
         }
         catch
         {
@@ -47,6 +69,11 @@ internal static partial class Alarm
     {
         try
         {
+            if (Aumid.Value is not { } aumid)
+            {
+                return false;
+            }
+
             var xml = $"""
                 <toast scenario="reminder">
                   <visual>
@@ -63,8 +90,6 @@ internal static partial class Alarm
                 """;
             var doc = new XmlDocument();
             doc.LoadXml(xml);
-            // An explicit app ID: the extension runs as a COM server, where the implicit one isn't reliable.
-            var aumid = Windows.ApplicationModel.Package.Current.Id.FamilyName + "!App";
             var notifier = ToastNotificationManager.CreateToastNotifier(aumid);
             if (notifier.Setting != NotificationSetting.Enabled)
             {
@@ -82,6 +107,17 @@ internal static partial class Alarm
         }
     }
 
+    /// <summary>Drops characters XML can't carry (control characters in a typed label).</summary>
+    private static string Clean(string s) => new([.. s.Where(XmlConvert.IsXmlChar)]);
+
+    private static void PlayFallbackSound()
+    {
+        var wav = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Media", "Alarm01.wav");
+        _ = File.Exists(wav)
+            ? PlaySoundW(wav, 0, SndFilename | SndAsync | SndNodefault)
+            : PlaySoundW("SystemExclamation", 0, SndAsync);
+    }
+
     /// <summary>Last notification problem, for troubleshooting (kept in the app's own data folder).</summary>
     private static void Log(string message)
     {
@@ -93,14 +129,6 @@ internal static partial class Alarm
         {
             // Nothing else to do.
         }
-    }
-
-    private static void PlayFallbackSound()
-    {
-        var wav = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Media", "Alarm01.wav");
-        _ = File.Exists(wav)
-            ? PlaySoundW(wav, 0, SndFilename | SndAsync | SndNodefault)
-            : PlaySoundW("SystemExclamation", 0, SndAsync);
     }
 
     [LibraryImport("winmm.dll", StringMarshalling = StringMarshalling.Utf16)]

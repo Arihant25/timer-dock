@@ -19,7 +19,7 @@
 - **On the Dock all the time.** It counts up for the stopwatch and down for a timer. When idle it's just a small stopwatch icon.
 - **Tells you when time's up**, with a Windows notification that stays until you dismiss it, and "Time's up" on the Dock.
 - **Pause, resume, add a minute or five, or reset** from the same page.
-- **Survives restarts.** A running timer keeps going if Command Palette or PowerToys restarts.
+- **Survives restarts.** A running timer keeps time if Command Palette or PowerToys restarts. If it ends while PowerToys is closed, the Dock shows "Time's up" when it's back.
 - **Private and offline**: no network access, no accounts, no telemetry.
 
 ## Install
@@ -73,12 +73,12 @@ Click the timer on the Dock (or run **Timer & Stopwatch** from Command Palette) 
   <img src="docs/screenshots/stopwatch.png" width="640" alt="The stopwatch running at 02:48 with three laps listed above the Pause, Lap and Reset controls">
 </p>
 
-Lengths it understands: `25` (minutes), `2.5`, `90s`, `45 seconds`, `5 min`, `1h`, `1h30m`, `3m20s`, `1:30` (minutes:seconds), `1:00:00`. Up to 99 hours.
+Lengths it understands: `25` (minutes), `2.5`, `90s`, `45 seconds`, `5 min`, `1h`, `1h30m`, `1h30`, `3m20s`, `1:30` (minutes:seconds), `1:00:00`. Up to 99 hours.
 
 ## Good to know
 
 - One timer or stopwatch at a time. Starting a new one replaces the current one.
-- The notification uses Windows' reminder style. If notifications are off for the app or Do Not Disturb is on, you'll still see "Time's up" on the Dock. If notifications can't be shown at all, it plays the Windows alarm sound instead.
+- The notification uses Windows' reminder style. If notifications are turned off for Timer Dock, it plays the Windows alarm sound instead. With Do Not Disturb on, Windows keeps the notification silent in the notification center; the Dock still shows "Time's up".
 - The state (including laps) is saved in the app's own data folder and removed when you uninstall it.
 
 ## Building

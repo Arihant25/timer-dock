@@ -28,6 +28,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $root    = $PSScriptRoot
 
+if ($Store -and -not $StoreIdentityName) { throw 'Pass -StoreIdentityName (Package/Identity/Name from Partner Center).' }
 if ($Store -and -not $env:TIMERDOCK_STORE_CHILD) {
   if ($Version -notmatch '\.0$') { throw 'Store package versions must end in .0' }
   $env:TIMERDOCK_STORE_CHILD = '1'

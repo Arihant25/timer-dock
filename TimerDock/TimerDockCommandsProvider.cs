@@ -88,6 +88,9 @@ internal sealed partial class TimerPage : DynamicListPage
 
     public override void UpdateSearchText(string oldSearch, string newSearch) => RaiseItemsChanged();
 
+    /// <summary>Stops refreshing this page once its Command Palette connection is replaced.</summary>
+    public void Detach() => TimerEngine.StateChanged -= Refresh;
+
     public override IListItem[] GetItems()
     {
         var items = new List<IListItem>();
@@ -159,7 +162,7 @@ internal sealed partial class TimerPage : DynamicListPage
 
         if (!TimerEngine.Finished)
         {
-            yield return new ListItem(new ActionCommand(TimerEngine.Running ? "Pause" : "Resume", TimerEngine.Running ? Glyphs.Pause : Glyphs.Play, TimerEngine.Toggle, keepOpen: true))
+            yield return new ListItem(new ActionCommand(TimerEngine.Running ? "Pause" : "Resume", TimerEngine.Running ? Glyphs.Pause : Glyphs.Play, TimerEngine.Running ? TimerEngine.Pause : TimerEngine.Resume, keepOpen: true))
             {
                 Title = $"{(TimerEngine.Running ? "Pause" : "Resume")} {what}",
                 Subtitle = $"{status} · {TimerEngine.Display}",
@@ -167,7 +170,7 @@ internal sealed partial class TimerPage : DynamicListPage
             };
         }
 
-        if (mode == TimerMode.Stopwatch)
+        if (mode == TimerMode.Stopwatch && TimerEngine.Running)
         {
             yield return new ListItem(new ActionCommand("Lap", Glyphs.Flag, TimerEngine.Lap, keepOpen: true))
             {
@@ -176,7 +179,7 @@ internal sealed partial class TimerPage : DynamicListPage
                 Section = heading,
             };
         }
-        else
+        else if (mode == TimerMode.Countdown)
         {
             foreach (var extra in new[] { 1, 5 })
             {
@@ -217,14 +220,26 @@ internal sealed partial class TimerPage : DynamicListPage
 /// <summary>Dock readout: "12:34" with a stopwatch or timer icon. Opens the page.</summary>
 internal sealed partial class ReadoutItem : ListItem
 {
+    private readonly TimerPage _page;
+
     public ReadoutItem()
-        : base(new TimerPage { Name = string.Empty })
+        : this(new TimerPage { Name = string.Empty })
     {
+    }
+
+    private ReadoutItem(TimerPage page)
+        : base(page)
+    {
+        _page = page;
         Update();
         TimerEngine.Changed += Update;
     }
 
-    public void Detach() => TimerEngine.Changed -= Update;
+    public void Detach()
+    {
+        TimerEngine.Changed -= Update;
+        _page.Detach();
+    }
 
     private void Update()
     {
@@ -263,6 +278,7 @@ internal sealed partial class ReadoutItem : ListItem
 public sealed partial class TimerDockCommandsProvider : CommandProvider
 {
     private readonly Lock _lock = new();
+    private readonly TimerPage _topLevelPage = new();
     private ReadoutItem? _readout;
 
     public TimerDockCommandsProvider()
@@ -274,7 +290,7 @@ public sealed partial class TimerDockCommandsProvider : CommandProvider
 
     public override ICommandItem[] TopLevelCommands() =>
     [
-        new CommandItem(new TimerPage())
+        new CommandItem(_topLevelPage)
         {
             Title = "Timer & Stopwatch",
             Subtitle = "Start a countdown or stopwatch shown on the Dock",

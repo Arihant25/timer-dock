@@ -34,8 +34,11 @@ $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate
 $trusted = Get-ChildItem Cert:\LocalMachine\TrustedPeople | Where-Object Thumbprint -eq $cert.Thumbprint
 if (-not $trusted) {
   Write-Host "Trusting signing certificate '$($cert.Subject)' (thumbprint $($cert.Thumbprint)). Approve the UAC prompt."
-  $cmd = "Import-Certificate -FilePath '$cer' -CertStoreLocation Cert:\LocalMachine\TrustedPeople | Out-Null"
+  $cmd = "Import-Certificate -FilePath '$($cer -replace "'", "''")' -CertStoreLocation Cert:\LocalMachine\TrustedPeople | Out-Null"
   Start-Process powershell -Verb RunAs -Wait -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', $cmd
+  if (-not (Get-ChildItem Cert:\LocalMachine\TrustedPeople | Where-Object Thumbprint -eq $cert.Thumbprint)) {
+    throw 'The signing certificate was not trusted (UAC prompt declined?), so Windows will refuse the package.'
+  }
 }
 
 Write-Host 'Installing package...'
