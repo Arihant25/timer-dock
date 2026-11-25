@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="arc" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5EEAD4"/>
+      <stop offset="1" stop-color="#38BDF8"/>
+    </linearGradient>
+  </defs>
+  <rect x="16" y="16" width="480" height="480" rx="110" fill="#14171c"/>
+  <rect x="226" y="72" width="60" height="34" rx="12" fill="#eef0f3"/>
+  <rect x="246" y="98" width="20" height="30" fill="#eef0f3"/>
+  <line x1="360" y1="150" x2="384" y2="126" stroke="#eef0f3" stroke-width="22" stroke-linecap="round"/>
+  <circle cx="256" cy="282" r="140" fill="#262a33"/>
+  <circle cx="256" cy="282" r="140" fill="none" stroke="#eef0f3" stroke-opacity="0.14" stroke-width="30"/>
+  <circle cx="256" cy="282" r="140" fill="none" stroke="url(#arc)" stroke-width="30" stroke-linecap="round"
+          stroke-dasharray="586.4 879.6" transform="rotate(-90 256 282)"/>
+  <line x1="256" y1="282" x2="256" y2="196" stroke="#eef0f3" stroke-width="24" stroke-linecap="round"/>
+  <circle cx="256" cy="282" r="20" fill="#eef0f3"/>
+</svg>
