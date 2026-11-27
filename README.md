@@ -26,7 +26,7 @@
 
 Requires Windows 10/11 and [PowerToys](https://github.com/microsoft/PowerToys) 0.102 or later with Command Palette and its Dock enabled.
 
-**Microsoft Store**: coming soon. Until then, install it from GitHub (below).
+**[Get it from the Microsoft Store](https://apps.microsoft.com/detail/9P396CLBTXWM)**.
 
 Then right-click the Dock, choose **Edit**, and add the **Timer & Stopwatch** band.
 
