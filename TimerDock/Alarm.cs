@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security;
-using System.Xml;
 using Windows.UI.Notifications;
 using XmlDocument = Windows.Data.Xml.Dom.XmlDocument;
 
@@ -107,8 +106,15 @@ internal static partial class Alarm
         }
     }
 
-    /// <summary>Drops characters XML can't carry (control characters in a typed label).</summary>
-    private static string Clean(string s) => new([.. s.Where(XmlConvert.IsXmlChar)]);
+    /// <summary>
+    /// Drops characters XML can't carry (control characters in a typed label). Written out by hand:
+    /// System.Xml's XmlConvert isn't available in the trimmed package, and calling it crashed the app.
+    /// </summary>
+    private static string Clean(string s) => new([.. s.Where(c =>
+        c is '\t' or '\n' or '\r'
+        || (c >= ' ' && c <= '퟿')
+        || char.IsSurrogate(c)
+        || (c >= '' && c <= '�'))]);
 
     private static void PlayFallbackSound()
     {

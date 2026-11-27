@@ -382,6 +382,11 @@ internal static partial class TimerEngine
 
             Ring(ring);
         }
+        catch
+        {
+            // This runs on a timer thread: anything escaping it would end the whole extension
+            // process, leaving the Dock frozen on its last text with nothing behind it.
+        }
         finally
         {
             Volatile.Write(ref _ticking, 0);
@@ -411,9 +416,18 @@ internal static partial class TimerEngine
 
     private static void Ring(Alarm.Request? ring)
     {
-        if (ring is { } r)
+        if (ring is not { } r)
+        {
+            return;
+        }
+
+        try
         {
             Alarm.Ring(r);
+        }
+        catch
+        {
+            // The Dock already shows "Time's up"; a failed notification mustn't take anything down.
         }
     }
 
